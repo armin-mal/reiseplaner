@@ -16,7 +16,7 @@
 ## Nachmittag
 **16:30** Spaziergang durch die Altstadt & La Seu
 
-> Tipp: Oben rechts auf das Stift-Symbol tippen, um Markdown zu bearbeiten – oder nach links wischen für Tag 2.`;
+> Tipp: Unten auf **Bearbeiten** tippen, um Markdown zu schreiben – oder nach links wischen für Tag 2.`;
 
   const DEFAULT_TICKETS_DAY_1 = [
     { id: "t1", type: "flight", title: "Flug LH 1824", meta: "10:15 → 12:30", url: "" },
@@ -802,10 +802,17 @@
     }
   });
 
-  // Lock app height to visualViewport so iOS keyboard doesn't push header off-screen
+  // Lock app height to visualViewport only while iOS keyboard is open;
+  // otherwise let .app-shell fill 100% down to the home indicator edge.
   function syncVisualViewport() {
     if (window.visualViewport) {
-      document.documentElement.style.setProperty("--app-height", `${window.visualViewport.height}px`);
+      const vvHeight = window.visualViewport.height;
+      const keyboardOpen = window.innerHeight - vvHeight > 100;
+      if (keyboardOpen) {
+        document.documentElement.style.setProperty("--app-height", `${vvHeight}px`);
+      } else {
+        document.documentElement.style.removeProperty("--app-height");
+      }
       if (window.scrollY !== 0 || window.scrollX !== 0) {
         window.scrollTo(0, 0);
       }
