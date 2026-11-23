@@ -574,26 +574,32 @@
           if (e.key === " " && anchor && anchor.nodeType === Node.TEXT_NODE) {
             const textBefore = anchor.textContent.slice(0, sel.anchorOffset);
             const block = anchor.parentElement?.closest("p, div:not(.rich-editor):not(.editor-todo)");
-            if (block && block.parentElement === editor && block.textContent === textBefore) {
-              if (textBefore === "#") {
+            const isTopLevelText = anchor.parentElement === editor && anchor.textContent === textBefore;
+            const targetNode = block && block.parentElement === editor && block.textContent === textBefore
+              ? block
+              : (isTopLevelText ? anchor : null);
+
+            if (targetNode) {
+              if (textBefore === "#" || textBefore === "##") {
                 e.preventDefault();
-                block.textContent = "";
-                document.execCommand("formatBlock", false, "H1");
-                syncEditorState();
-              } else if (textBefore === "##") {
-                e.preventDefault();
-                block.textContent = "";
-                document.execCommand("formatBlock", false, "H2");
+                const h = document.createElement(textBefore === "#" ? "h1" : "h2");
+                h.innerHTML = "<br>";
+                targetNode.replaceWith(h);
+                placeCaretAtStart(h);
                 syncEditorState();
               } else if (textBefore === "-") {
                 e.preventDefault();
-                block.textContent = "";
-                document.execCommand("insertUnorderedList");
+                const ul = document.createElement("ul");
+                const li = document.createElement("li");
+                li.innerHTML = "<br>";
+                ul.appendChild(li);
+                targetNode.replaceWith(ul);
+                placeCaretAtStart(li);
                 syncEditorState();
               } else if (textBefore === "- [ ]") {
                 e.preventDefault();
                 const todo = createTodoElement("");
-                block.replaceWith(todo);
+                targetNode.replaceWith(todo);
                 placeCaretAtStart(todo.querySelector(".editor-todo-text"));
                 syncEditorState();
               }
@@ -788,8 +794,9 @@
     const el = anchor ? (anchor.nodeType === 1 ? anchor : anchor.parentElement) : null;
     const inH1 = Boolean(el && el.closest("h1"));
     const inH2 = Boolean(el && el.closest("h2"));
-    const isBold = document.queryCommandState && document.queryCommandState("bold");
-    const isList = document.queryCommandState && document.queryCommandState("insertUnorderedList");
+    const inStrong = Boolean(el && el.closest("strong, b"));
+    const isBold = !inH1 && !inH2 && (inStrong || (document.queryCommandState && document.queryCommandState("bold")));
+    const isList = Boolean(el && el.closest("ul"));
 
     mdToolbar.querySelectorAll(".md-tool-btn[data-format]").forEach((btn) => {
       const fmt = btn.dataset.format;
@@ -871,7 +878,23 @@
     } else if (fmt === "bold") {
       document.execCommand("bold");
     } else if (fmt === "ul") {
-      document.execCommand("insertUnorderedList");
+      const sel = window.getSelection();
+      const anchor = sel && sel.rangeCount ? sel.anchorNode : null;
+      const block = anchor && (anchor.nodeType === 1 ? anchor : anchor.parentElement)?.closest("p, h1, h2, h3, div:not(.rich-editor):not(.editor-todo)");
+      if (editor.innerHTML.trim() === "" || (block && block.parentElement === editor && block.textContent.trim() === "")) {
+        const ul = document.createElement("ul");
+        const li = document.createElement("li");
+        li.innerHTML = "<br>";
+        ul.appendChild(li);
+        if (block && block.parentElement === editor) {
+          block.replaceWith(ul);
+        } else {
+          editor.appendChild(ul);
+        }
+        placeCaretAtStart(li);
+      } else {
+        document.execCommand("insertUnorderedList");
+      }
     } else if (fmt === "todo") {
       const todo = createTodoElement("");
       const sel = window.getSelection();
