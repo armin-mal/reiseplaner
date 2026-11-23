@@ -472,7 +472,7 @@
         clearTimeout(programmaticTimer);
         programmaticTimer = setTimeout(() => {
           programmaticTarget = null;
-        }, 450);
+        }, 800);
       } else {
         programmaticTarget = null;
       }
@@ -525,7 +525,9 @@
     scrollRaf = requestAnimationFrame(() => {
       const width = daysTrack.clientWidth;
       if (!width) return;
-      const newIndex = Math.round(daysTrack.scrollLeft / width);
+      const exact = daysTrack.scrollLeft / width;
+      if (Math.abs(exact - state.activeDay) < 0.55) return;
+      const newIndex = Math.round(exact);
       if (newIndex !== state.activeDay && newIndex >= 0 && newIndex < state.daysCount) {
         state.activeDay = newIndex;
         updateActiveUI(newIndex, false);
