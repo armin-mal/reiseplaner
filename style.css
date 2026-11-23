@@ -27,7 +27,7 @@ body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  background: linear-gradient(to bottom, var(--charcoal) 50%, var(--white) 50%);
+  background: var(--white);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -40,20 +40,20 @@ body {
   height: 100dvh;
   max-width: 520px;
   margin: 0 auto;
-  background: var(--charcoal);
+  background: var(--white);
   overflow: hidden;
 }
 
-/* Editorial Charcoal Header */
+/* Uniform Clean White Header */
 .app-header {
   flex-shrink: 0;
-  padding: calc(var(--safe-top) + 24px) 20px 22px;
-  background: var(--charcoal);
-  color: var(--white);
+  padding: calc(var(--safe-top) + 18px) 20px 10px;
+  background: var(--white);
+  color: var(--text);
 }
 
 .app-header.has-topbar {
-  padding-top: calc(var(--safe-top) + 12px);
+  padding-top: calc(var(--safe-top) + 10px);
 }
 
 .header-top {
@@ -61,7 +61,7 @@ body {
   align-items: center;
   justify-content: space-between;
   min-height: 36px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .header-icon-btn {
@@ -73,7 +73,7 @@ body {
   margin-left: -8px;
   border: none;
   background: transparent;
-  color: var(--white);
+  color: var(--text);
   cursor: pointer;
   border-radius: 50%;
 }
@@ -84,7 +84,7 @@ body {
 }
 
 .header-icon-btn:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--soft-gray);
 }
 
 .header-titles {
@@ -99,31 +99,31 @@ body {
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--white);
+  color: var(--text);
   cursor: pointer;
   text-align: left;
 }
 
 .trip-title-btn:active {
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .title-edit-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .trip-title {
   margin: 0;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1.12;
-  color: var(--white);
+  line-height: 1.15;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -133,28 +133,28 @@ body {
   margin: 4px 0 0;
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
 
-/* Curved White Content Sheet */
+/* Unified White Content Area */
 .content-sheet {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--white);
-  border-radius: 30px 30px 0 0;
   overflow: hidden;
 }
 
-/* Day Pills (Top of White Sheet) */
+/* Day Pills */
 .day-pills {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
   overflow-x: auto;
-  padding: 18px 20px 10px;
+  padding: 10px 20px 12px;
+  border-bottom: 1px solid var(--border);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
