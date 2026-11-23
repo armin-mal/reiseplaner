@@ -414,14 +414,14 @@ body {
 }
 
 .md-preview h1 {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 4px 0 10px;
 }
 
 .md-preview h2 {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 16px 0 8px;
@@ -573,14 +573,14 @@ body {
 }
 
 .rich-editor h1 {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 6px 0 10px;
 }
 
 .rich-editor h2 {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 14px 0 8px;
