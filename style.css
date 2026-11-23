@@ -35,7 +35,7 @@ body {
 
 .app-shell {
   position: fixed;
-  top: 0;
+  top: var(--vv-top, 0px);
   bottom: 0;
   left: 0;
   right: 0;
@@ -47,6 +47,19 @@ body {
   margin: 0 auto;
   background: var(--charcoal);
   overflow: hidden;
+}
+
+.app-shell.keyboard-open .app-header {
+  padding-top: calc(var(--safe-top) + 6px);
+  padding-bottom: 12px;
+}
+
+.app-shell.keyboard-open .trip-title {
+  font-size: 24px;
+}
+
+.app-shell.keyboard-open .bottom-bar {
+  padding-bottom: 10px;
 }
 
 /* Editorial Charcoal Header */

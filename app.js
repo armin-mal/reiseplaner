@@ -802,31 +802,38 @@
     }
   });
 
-  // Lock app height to visualViewport only while iOS keyboard is open;
-  // otherwise let .app-shell fill 100% down to the home indicator edge.
+  // Lock app to visualViewport (top + height) while iOS keyboard is open
+  // so iOS never pushes the header off-screen or hides the bottom bar.
+  const appShell = document.querySelector(".app-shell");
+  let baseViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
   function syncVisualViewport() {
-    if (window.visualViewport) {
-      const vvHeight = window.visualViewport.height;
-      const keyboardOpen = window.innerHeight - vvHeight > 100;
-      if (keyboardOpen) {
-        document.documentElement.style.setProperty("--app-height", `${vvHeight}px`);
-      } else {
-        document.documentElement.style.removeProperty("--app-height");
-      }
-      if (window.scrollY !== 0 || window.scrollX !== 0) {
-        window.scrollTo(0, 0);
-      }
+    if (!window.visualViewport) {
+      goToDay(state.activeDay, false);
+      return;
+    }
+    const vv = window.visualViewport;
+    if (vv.height > baseViewportHeight) {
+      baseViewportHeight = vv.height;
+    }
+    const keyboardOpen = vv.height < baseViewportHeight - 100 || vv.offsetTop > 10;
+
+    if (keyboardOpen) {
+      document.documentElement.style.setProperty("--app-height", `${vv.height}px`);
+      document.documentElement.style.setProperty("--vv-top", `${vv.offsetTop}px`);
+      appShell.classList.add("keyboard-open");
+    } else {
+      document.documentElement.style.removeProperty("--app-height");
+      document.documentElement.style.removeProperty("--vv-top");
+      appShell.classList.remove("keyboard-open");
+      baseViewportHeight = vv.height;
     }
     goToDay(state.activeDay, false);
   }
 
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", syncVisualViewport);
-    window.visualViewport.addEventListener("scroll", () => {
-      if (window.scrollY !== 0 || window.scrollX !== 0) {
-        window.scrollTo(0, 0);
-      }
-    });
+    window.visualViewport.addEventListener("scroll", syncVisualViewport);
     syncVisualViewport();
   }
 
