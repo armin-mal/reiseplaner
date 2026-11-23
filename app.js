@@ -10,13 +10,13 @@
 
   const DEFAULT_DAY_1 = `# Anreise & Altstadt
 
-- [x] Reisepass & Boarding Pass
-- [ ] Mietwagen abholen
+- Reisepass & Boarding Pass einpacken
+- Mietwagen abholen
 
 ## Nachmittag
 **16:30** Spaziergang durch die Altstadt & La Seu
 
-> Tipp: Unten auf **Bearbeiten** tippen, um Markdown zu schreiben – oder nach links wischen für Tag 2.`;
+> Tipp: Unten auf **Bearbeiten** tippen, um den Tag zu planen – oder nach links wischen für Tag 2.`;
 
   const DEFAULT_TICKETS_DAY_1 = [
     { id: "t1", type: "flight", title: "Flug LH 1824", meta: "10:15 → 12:30", url: "" },
@@ -24,8 +24,7 @@
   ];
 
   const DAY_TEMPLATE = `## Morgen
-- [ ] Frühstück
-- 
+- Frühstück
 
 ## Mittag
 - 
