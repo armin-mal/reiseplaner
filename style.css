@@ -27,39 +27,21 @@ body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--charcoal);
+  background: linear-gradient(to bottom, var(--charcoal) 50%, var(--white) 50%);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 .app-shell {
-  position: fixed;
-  top: var(--vv-top, 0px);
-  bottom: 0;
-  left: 0;
-  right: 0;
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: var(--app-height, 100%);
+  height: 100dvh;
   max-width: 520px;
   margin: 0 auto;
   background: var(--charcoal);
   overflow: hidden;
-}
-
-.app-shell.keyboard-open .app-header {
-  padding-top: calc(var(--safe-top) + 6px);
-  padding-bottom: 12px;
-}
-
-.app-shell.keyboard-open .trip-title {
-  font-size: 24px;
-}
-
-.app-shell.keyboard-open .bottom-bar {
-  padding-bottom: 10px;
 }
 
 /* Editorial Charcoal Header */
@@ -286,9 +268,6 @@ body {
   padding: 8px 20px 24px;
   display: flex;
   flex-direction: column;
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 .day-date-badge {

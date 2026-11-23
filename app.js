@@ -828,37 +828,7 @@
     }
   });
 
-  // Lock app to visualViewport (top + height) while iOS keyboard is open
-  // so iOS never pushes the header off-screen or hides the bottom bar.
-  const appShell = document.querySelector(".app-shell");
-  let baseViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   let lastTrackWidth = daysTrack.clientWidth;
-
-  function syncVisualViewport() {
-    if (!window.visualViewport) return;
-    const vv = window.visualViewport;
-    if (vv.height > baseViewportHeight) {
-      baseViewportHeight = vv.height;
-    }
-    const keyboardOpen = vv.height < baseViewportHeight - 100 || vv.offsetTop > 10;
-
-    if (keyboardOpen) {
-      document.documentElement.style.setProperty("--app-height", `${vv.height}px`);
-      document.documentElement.style.setProperty("--vv-top", `${vv.offsetTop}px`);
-      appShell.classList.add("keyboard-open");
-    } else {
-      document.documentElement.style.removeProperty("--app-height");
-      document.documentElement.style.removeProperty("--vv-top");
-      appShell.classList.remove("keyboard-open");
-      baseViewportHeight = vv.height;
-    }
-  }
-
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", syncVisualViewport);
-    window.visualViewport.addEventListener("scroll", syncVisualViewport);
-    syncVisualViewport();
-  }
 
   window.addEventListener("resize", () => {
     const newWidth = daysTrack.clientWidth;
