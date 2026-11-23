@@ -523,7 +523,7 @@
         editor.className = "rich-editor";
         editor.contentEditable = "true";
         editor.dataset.day = String(i);
-        editor.dataset.placeholder = `Tag ${i + 1} planen...\n\nTippe oben auf H1, H2, Fett, Todo oder Liste – es wird direkt formatiert.`;
+        editor.dataset.placeholder = `Tag ${i + 1} planen...\n\nTippe oben auf H1, H2, Fett oder Liste – es wird direkt formatiert.`;
         editor.innerHTML = renderEditorHtml(state.days[i] || "");
 
         const syncEditorState = () => {
@@ -822,6 +822,21 @@
     if (!btn) return;
     if (btn.id === "toolbarTicketBtn") {
       openTicketModal(state.activeDay, null);
+      return;
+    }
+
+    if (btn.id === "clearDayBtn") {
+      const dayNum = state.activeDay + 1;
+      if (confirm(`Wirklich alles für Tag ${dayNum} löschen?`)) {
+        state.days[state.activeDay] = "";
+        state.tickets[state.activeDay] = [];
+        saveState();
+        renderAll();
+        goToDay(state.activeDay, false);
+        const refreshedEditor = daysTrack.querySelector(`.rich-editor[data-day="${state.activeDay}"]`);
+        if (refreshedEditor) refreshedEditor.focus();
+        showToast(`Tag ${dayNum} geleert`);
+      }
       return;
     }
 

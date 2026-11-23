@@ -668,6 +668,10 @@ body {
   color: var(--white);
 }
 
+.md-tool-btn.danger-tool {
+  color: var(--danger);
+}
+
 .edit-tickets-strip {
   display: flex;
   flex-wrap: wrap;
