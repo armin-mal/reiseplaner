@@ -190,6 +190,149 @@
     return out;
   }
 
+  function renderEditorHtml(mdText) {
+    const trimmedAll = (mdText || "").trim();
+    if (!trimmedAll) return "";
+
+    const lines = mdText.replace(/\r\n/g, "\n").split("\n");
+    let html = "";
+    let listType = null;
+
+    function closeList() {
+      if (listType) {
+        html += listType === "ol" ? "</ol>" : "</ul>";
+        listType = null;
+      }
+    }
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        closeList();
+        return;
+      }
+
+      const hMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+      if (hMatch) {
+        closeList();
+        const level = hMatch[1].length;
+        html += `<h${level}>${renderInline(hMatch[2])}</h${level}>`;
+        return;
+      }
+
+      if (trimmed.startsWith("> ")) {
+        closeList();
+        html += `<blockquote>${renderInline(trimmed.slice(2))}</blockquote>`;
+        return;
+      }
+
+      const todoMatch = trimmed.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
+      if (todoMatch) {
+        closeList();
+        const checked = todoMatch[1].toLowerCase() === "x";
+        html += `<div class="editor-todo ${checked ? "checked" : ""}"><input type="checkbox" contenteditable="false" ${checked ? "checked" : ""} /><span class="editor-todo-text">${renderInline(todoMatch[2]) || "<br>"}</span></div>`;
+        return;
+      }
+
+      const ulMatch = trimmed.match(/^[-*]\s+(.*)$/);
+      if (ulMatch) {
+        if (listType !== "ul") {
+          closeList();
+          listType = "ul";
+          html += "<ul>";
+        }
+        html += `<li>${renderInline(ulMatch[1])}</li>`;
+        return;
+      }
+
+      const olMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+      if (olMatch) {
+        if (listType !== "ol") {
+          closeList();
+          listType = "ol";
+          html += "<ol>";
+        }
+        html += `<li>${renderInline(olMatch[1])}</li>`;
+        return;
+      }
+
+      closeList();
+      html += `<p>${renderInline(trimmed)}</p>`;
+    });
+
+    closeList();
+    return html;
+  }
+
+  function inlineNodesToMarkdown(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent.replace(/\u00a0/g, " ");
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    const tag = node.tagName.toLowerCase();
+    if (tag === "br") return "";
+    const inner = Array.from(node.childNodes).map(inlineNodesToMarkdown).join("");
+    if (tag === "strong" || tag === "b") return inner ? `**${inner}**` : "";
+    if (tag === "em" || tag === "i") return inner ? `*${inner}*` : "";
+    if (tag === "code") return inner ? `\`${inner}\`` : "";
+    if (tag === "a") {
+      const href = node.getAttribute("href") || "";
+      return href ? `[${inner}](${href})` : inner;
+    }
+    return inner;
+  }
+
+  function editorToMarkdown(editorEl) {
+    const lines = [];
+    Array.from(editorEl.childNodes).forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const t = node.textContent.replace(/\u00a0/g, " ").trim();
+        if (t) lines.push(t);
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      const tag = node.tagName.toLowerCase();
+
+      if (node.classList.contains("editor-todo")) {
+        const cb = node.querySelector('input[type="checkbox"]');
+        const textEl = node.querySelector(".editor-todo-text") || node;
+        const text = inlineNodesToMarkdown(textEl).trim();
+        lines.push(`- [${cb && cb.checked ? "x" : " "}] ${text}`);
+        return;
+      }
+
+      if (tag === "h1") {
+        const t = inlineNodesToMarkdown(node).trim();
+        if (t) lines.push(`# ${t}`);
+      } else if (tag === "h2") {
+        const t = inlineNodesToMarkdown(node).trim();
+        if (t) lines.push(`## ${t}`);
+      } else if (tag === "h3") {
+        const t = inlineNodesToMarkdown(node).trim();
+        if (t) lines.push(`### ${t}`);
+      } else if (tag === "blockquote") {
+        const t = inlineNodesToMarkdown(node).trim();
+        if (t) lines.push(`> ${t}`);
+      } else if (tag === "ul") {
+        Array.from(node.children).forEach((li) => {
+          const t = inlineNodesToMarkdown(li).trim();
+          if (t) lines.push(`- ${t}`);
+        });
+      } else if (tag === "ol") {
+        Array.from(node.children).forEach((li, idx) => {
+          const t = inlineNodesToMarkdown(li).trim();
+          if (t) lines.push(`${idx + 1}. ${t}`);
+        });
+      } else if (tag === "hr") {
+        lines.push("---");
+      } else {
+        const t = inlineNodesToMarkdown(node).trim();
+        if (t) lines.push(t);
+      }
+    });
+    return lines.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
   function renderMarkdown(mdText, dayIndex) {
     const lines = (mdText || "").replace(/\r\n/g, "\n").split("\n");
     let html = "";
@@ -376,16 +519,89 @@
       slide.dataset.day = String(i);
 
       if (isEditMode) {
-        const textarea = document.createElement("textarea");
-        textarea.className = "md-editor";
-        textarea.dataset.day = String(i);
-        textarea.placeholder = `Tag ${i + 1} planen...\n\n# Überschrift\n- [ ] Todo\n- Programmpunkt\n**14:00** Treffpunkt`;
-        textarea.value = state.days[i] || "";
-        textarea.addEventListener("input", (e) => {
-          state.days[i] = e.target.value;
+        const editor = document.createElement("div");
+        editor.className = "rich-editor";
+        editor.contentEditable = "true";
+        editor.dataset.day = String(i);
+        editor.dataset.placeholder = `Tag ${i + 1} planen...\n\nTippe oben auf H1, H2, Fett, Todo oder Liste – es wird direkt formatiert.`;
+        editor.innerHTML = renderEditorHtml(state.days[i] || "");
+
+        const syncEditorState = () => {
+          if (editor.textContent.trim() === "" && !editor.querySelector("h1, h2, h3, ul, ol, .editor-todo")) {
+            if (editor.innerHTML !== "") editor.innerHTML = "";
+          }
+          state.days[i] = editorToMarkdown(editor);
           saveState();
+        };
+
+        editor.addEventListener("blur", () => {
+          if (editor.textContent.trim() === "" && !editor.querySelector(".editor-todo")) {
+            editor.innerHTML = "";
+          }
         });
-        slide.appendChild(textarea);
+
+        editor.addEventListener("input", syncEditorState);
+        editor.addEventListener("change", (e) => {
+          const cb = e.target.closest('.editor-todo input[type="checkbox"]');
+          if (cb) {
+            cb.closest(".editor-todo").classList.toggle("checked", cb.checked);
+            syncEditorState();
+          }
+        });
+        editor.addEventListener("keydown", (e) => {
+          const sel = window.getSelection();
+          if (!sel || !sel.rangeCount) return;
+          const anchor = sel.anchorNode;
+          const todoRow = anchor && (anchor.nodeType === 1 ? anchor : anchor.parentElement)?.closest(".editor-todo");
+
+          if (e.key === "Enter" && todoRow) {
+            e.preventDefault();
+            const textEl = todoRow.querySelector(".editor-todo-text");
+            if (textEl && textEl.textContent.trim() === "") {
+              const p = document.createElement("p");
+              p.innerHTML = "<br>";
+              todoRow.replaceWith(p);
+              placeCaretAtStart(p);
+            } else {
+              const nextTodo = createTodoElement("");
+              todoRow.after(nextTodo);
+              placeCaretAtStart(nextTodo.querySelector(".editor-todo-text"));
+            }
+            syncEditorState();
+            return;
+          }
+
+          if (e.key === " " && anchor && anchor.nodeType === Node.TEXT_NODE) {
+            const textBefore = anchor.textContent.slice(0, sel.anchorOffset);
+            const block = anchor.parentElement?.closest("p, div:not(.rich-editor):not(.editor-todo)");
+            if (block && block.parentElement === editor && block.textContent === textBefore) {
+              if (textBefore === "#") {
+                e.preventDefault();
+                block.textContent = "";
+                document.execCommand("formatBlock", false, "H1");
+                syncEditorState();
+              } else if (textBefore === "##") {
+                e.preventDefault();
+                block.textContent = "";
+                document.execCommand("formatBlock", false, "H2");
+                syncEditorState();
+              } else if (textBefore === "-") {
+                e.preventDefault();
+                block.textContent = "";
+                document.execCommand("insertUnorderedList");
+                syncEditorState();
+              } else if (textBefore === "- [ ]") {
+                e.preventDefault();
+                const todo = createTodoElement("");
+                block.replaceWith(todo);
+                placeCaretAtStart(todo.querySelector(".editor-todo-text"));
+                syncEditorState();
+              }
+            }
+          }
+        });
+
+        slide.appendChild(editor);
 
         const dayTickets = state.tickets[i] || [];
         if (dayTickets.length > 0) {
@@ -448,12 +664,29 @@
     }
   }
 
+  function createTodoElement(text = "") {
+    const row = document.createElement("div");
+    row.className = "editor-todo";
+    row.innerHTML = `<input type="checkbox" contenteditable="false" /><span class="editor-todo-text">${text ? escapeHtml(text) : "<br>"}</span>`;
+    return row;
+  }
+
+  function placeCaretAtStart(el) {
+    if (!el) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
   function setEditMode(edit, focusDayIndex = state.activeDay) {
     isEditMode = edit;
     renderAll();
     goToDay(focusDayIndex, false);
     if (isEditMode) {
-      const editor = daysTrack.querySelector(`textarea[data-day="${focusDayIndex}"]`);
+      const editor = daysTrack.querySelector(`.rich-editor[data-day="${focusDayIndex}"]`);
       if (editor) setTimeout(() => editor.focus(), 60);
     }
   }
@@ -544,7 +777,39 @@
     }, { passive: true });
   }
 
-  // Markdown Toolbar
+  // Rich-Text Formatting Toolbar (keep keyboard open via mousedown preventDefault)
+  function updateToolbarActiveState() {
+    if (!isEditMode) return;
+    const editor = daysTrack.querySelector(`.rich-editor[data-day="${state.activeDay}"]`);
+    if (!editor) return;
+
+    const sel = window.getSelection();
+    const anchor = sel && sel.rangeCount ? sel.anchorNode : null;
+    const el = anchor ? (anchor.nodeType === 1 ? anchor : anchor.parentElement) : null;
+    const inH1 = Boolean(el && el.closest("h1"));
+    const inH2 = Boolean(el && el.closest("h2"));
+    const isBold = document.queryCommandState && document.queryCommandState("bold");
+    const isList = document.queryCommandState && document.queryCommandState("insertUnorderedList");
+
+    mdToolbar.querySelectorAll(".md-tool-btn[data-format]").forEach((btn) => {
+      const fmt = btn.dataset.format;
+      const active =
+        (fmt === "h1" && inH1) ||
+        (fmt === "h2" && inH2) ||
+        (fmt === "bold" && isBold) ||
+        (fmt === "ul" && isList);
+      btn.classList.toggle("active", active);
+    });
+  }
+
+  document.addEventListener("selectionchange", updateToolbarActiveState);
+
+  mdToolbar.addEventListener("mousedown", (e) => {
+    if (e.target.closest(".md-tool-btn")) {
+      e.preventDefault();
+    }
+  });
+
   mdToolbar.addEventListener("click", (e) => {
     const btn = e.target.closest(".md-tool-btn");
     if (!btn) return;
@@ -553,29 +818,76 @@
       return;
     }
 
-    const editor = daysTrack.querySelector(`textarea[data-day="${state.activeDay}"]`);
+    const editor = daysTrack.querySelector(`.rich-editor[data-day="${state.activeDay}"]`);
     if (!editor) return;
-
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const val = editor.value;
+    editor.focus();
 
     if (btn.id === "insertTemplateBtn") {
-      const prefix = val && !val.endsWith("\n") ? "\n\n" : "";
-      editor.setRangeText(prefix + DAY_TEMPLATE, end, end, "end");
-    } else if (btn.dataset.wrap) {
-      const wrap = btn.dataset.wrap;
-      const selected = val.slice(start, end) || "Text";
-      editor.setRangeText(wrap + selected + wrap, start, end, "select");
-    } else if (btn.dataset.insert) {
-      const ins = btn.dataset.insert;
-      const lineStart = val.lastIndexOf("\n", start - 1) + 1;
-      editor.setRangeText(ins, lineStart, lineStart, "end");
+      const existing = editorToMarkdown(editor);
+      const nextMd = existing ? `${existing}\n\n${DAY_TEMPLATE}` : DAY_TEMPLATE;
+      editor.innerHTML = renderEditorHtml(nextMd);
+      state.days[state.activeDay] = editorToMarkdown(editor);
+      saveState();
+      return;
     }
 
-    state.days[state.activeDay] = editor.value;
+    const fmt = btn.dataset.format;
+    if (fmt === "h1" || fmt === "h2") {
+      if (editor.innerHTML.trim() === "") {
+        const h = document.createElement(fmt);
+        h.innerHTML = "<br>";
+        editor.appendChild(h);
+        placeCaretAtStart(h);
+      } else {
+        const sel = window.getSelection();
+        const anchor = sel && sel.rangeCount ? sel.anchorNode : null;
+        let block = anchor
+          ? (anchor.nodeType === 1 ? anchor : anchor.parentElement)?.closest("h1, h2, h3, p, div:not(.rich-editor):not(.editor-todo), li")
+          : null;
+
+        if (!block || !editor.contains(block)) {
+          if (anchor && anchor.nodeType === Node.TEXT_NODE && anchor.parentElement === editor) {
+            const p = document.createElement("p");
+            anchor.before(p);
+            p.appendChild(anchor);
+            block = p;
+          }
+        }
+
+        if (block && editor.contains(block) && block.tagName.toLowerCase() !== "li") {
+          const nextTag = block.tagName.toLowerCase() === fmt ? "p" : fmt;
+          const replacement = document.createElement(nextTag);
+          replacement.innerHTML = block.innerHTML || "<br>";
+          block.replaceWith(replacement);
+          const range = document.createRange();
+          range.selectNodeContents(replacement);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          document.execCommand("formatBlock", false, fmt.toUpperCase());
+        }
+      }
+    } else if (fmt === "bold") {
+      document.execCommand("bold");
+    } else if (fmt === "ul") {
+      document.execCommand("insertUnorderedList");
+    } else if (fmt === "todo") {
+      const todo = createTodoElement("");
+      const sel = window.getSelection();
+      const anchor = sel && sel.rangeCount ? sel.anchorNode : null;
+      const block = anchor && (anchor.nodeType === 1 ? anchor : anchor.parentElement)?.closest("p, h1, h2, h3, div:not(.rich-editor):not(.editor-todo)");
+      if (block && block.parentElement === editor && block.textContent.trim() === "") {
+        block.replaceWith(todo);
+      } else {
+        editor.appendChild(todo);
+      }
+      placeCaretAtStart(todo.querySelector(".editor-todo-text"));
+    }
+
+    state.days[state.activeDay] = editorToMarkdown(editor);
     saveState();
-    editor.focus();
+    updateToolbarActiveState();
   });
 
   // Header & Bottom Bar Controls

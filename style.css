@@ -544,25 +544,128 @@ body {
   color: var(--text-muted);
 }
 
-/* Edit Mode */
-.md-editor {
+/* Edit Mode (WYSIWYG Rich Editor) */
+.rich-editor {
   width: 100%;
   flex: 1;
   min-height: 260px;
-  border: none;
   outline: none;
-  resize: none;
   background: transparent;
   color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: inherit;
   font-size: 16px; /* >= 16px prevents iOS Safari zoom */
   line-height: 1.55;
-  padding: 8px 0;
+  padding: 6px 0 24px;
+  -webkit-user-select: text;
+  user-select: text;
+  word-wrap: break-word;
 }
 
-.md-editor::placeholder {
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #c7c7cc;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+.rich-editor > *:first-child {
+  margin-top: 0;
+}
+
+.rich-editor h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 6px 0 10px;
+}
+
+.rich-editor h2 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 14px 0 8px;
+}
+
+.rich-editor h3 {
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-muted);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  margin: 12px 0 6px;
+}
+
+.rich-editor p,
+.rich-editor div {
+  margin: 0 0 8px;
+}
+
+.rich-editor ul,
+.rich-editor ol {
+  margin: 4px 0 12px;
+  padding-left: 20px;
+}
+
+.rich-editor li {
+  margin-bottom: 6px;
+}
+
+.rich-editor blockquote {
+  margin: 10px 0 12px;
+  padding: 10px 14px;
+  background: var(--soft-gray);
+  border-left: 3px solid var(--charcoal);
+  border-radius: 0 12px 12px 0;
+  font-size: 14px;
+}
+
+.rich-editor .editor-todo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.rich-editor .editor-todo input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  border-radius: 6px;
+  border: 1.8px solid rgba(26, 27, 31, 0.35);
+  background: var(--white);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.rich-editor .editor-todo input[type="checkbox"]:checked {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+}
+
+.rich-editor .editor-todo input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rich-editor .editor-todo-text {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+
+.rich-editor .editor-todo.checked .editor-todo-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.md-tool-btn.active {
+  background: var(--charcoal);
+  color: var(--white);
 }
 
 .edit-tickets-strip {
