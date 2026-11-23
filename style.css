@@ -48,13 +48,13 @@ body {
 /* Uniform Clean White Header */
 .app-header {
   flex-shrink: 0;
-  padding: calc(var(--safe-top) + 8px) 20px 10px;
+  padding: calc(var(--safe-top) + 18px) 20px 10px;
   background: var(--white);
   color: var(--text);
 }
 
 .app-header.has-topbar {
-  padding-top: calc(var(--safe-top) + 6px);
+  padding-top: calc(var(--safe-top) + 14px);
 }
 
 .header-top {
