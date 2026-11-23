@@ -493,7 +493,8 @@
     nextCtaBtn.classList.remove("secondary-cta");
   }
 
-  // Horizontal swipe sync
+  // Horizontal swipe sync: update active pill smoothly without fighting finger drag
+  let pillScrollTimer = null;
   daysTrack.addEventListener("scroll", () => {
     if (scrollRaf) cancelAnimationFrame(scrollRaf);
     scrollRaf = requestAnimationFrame(() => {
@@ -503,10 +504,17 @@
       if (newIndex !== state.activeDay && newIndex >= 0 && newIndex < state.daysCount) {
         state.activeDay = newIndex;
         saveState();
-        updateActiveUI(newIndex, true);
+        updateActiveUI(newIndex, false);
+        clearTimeout(pillScrollTimer);
+        pillScrollTimer = setTimeout(() => {
+          const activePill = dayPills.querySelector(`.day-pill[data-day="${state.activeDay}"]`);
+          if (activePill) {
+            activePill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+          }
+        }, 120);
       }
     });
-  });
+  }, { passive: true });
 
   // Markdown Toolbar
   mdToolbar.addEventListener("click", (e) => {
@@ -793,6 +801,27 @@
       showToast("Reiseplan zurückgesetzt");
     }
   });
+
+  // Lock app height to visualViewport so iOS keyboard doesn't push header off-screen
+  function syncVisualViewport() {
+    if (window.visualViewport) {
+      document.documentElement.style.setProperty("--app-height", `${window.visualViewport.height}px`);
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    }
+    goToDay(state.activeDay, false);
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncVisualViewport);
+    window.visualViewport.addEventListener("scroll", () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+    });
+    syncVisualViewport();
+  }
 
   window.addEventListener("resize", () => goToDay(state.activeDay, false));
 
