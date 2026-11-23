@@ -196,7 +196,6 @@ body {
   padding: 7px 15px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
 }
 
 .day-pill.has-date {
@@ -287,6 +286,9 @@ body {
   padding: 8px 20px 24px;
   display: flex;
   flex-direction: column;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .day-date-badge {

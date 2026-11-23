@@ -458,19 +458,31 @@
     }
   }
 
+  let programmaticTarget = null;
+  let programmaticTimer = null;
+
   function goToDay(index, smooth = true) {
     const target = Math.min(Math.max(0, index), state.daysCount - 1);
     state.activeDay = target;
-    saveState();
 
     const width = daysTrack.clientWidth;
     if (width > 0) {
+      if (smooth) {
+        programmaticTarget = target;
+        clearTimeout(programmaticTimer);
+        programmaticTimer = setTimeout(() => {
+          programmaticTarget = null;
+        }, 450);
+      } else {
+        programmaticTarget = null;
+      }
       daysTrack.scrollTo({
         left: target * width,
         behavior: smooth ? "smooth" : "auto",
       });
     }
     updateActiveUI(target, true);
+    saveState();
   }
 
   function updateActiveUI(index, scrollPill = true) {
@@ -493,9 +505,22 @@
     nextCtaBtn.classList.remove("secondary-cta");
   }
 
-  // Horizontal swipe sync: update active pill smoothly without fighting finger drag
-  let pillScrollTimer = null;
+  // Horizontal swipe sync: never fight programmatic smooth-scroll or save synchronously mid-frame
+  let swipeSettleTimer = null;
+  function settleSwipeIndex() {
+    const width = daysTrack.clientWidth;
+    if (!width) return;
+    const settled = Math.min(Math.max(0, Math.round(daysTrack.scrollLeft / width)), state.daysCount - 1);
+    programmaticTarget = null;
+    if (settled !== state.activeDay) {
+      state.activeDay = settled;
+      updateActiveUI(settled, true);
+    }
+    saveState();
+  }
+
   daysTrack.addEventListener("scroll", () => {
+    if (programmaticTarget !== null) return;
     if (scrollRaf) cancelAnimationFrame(scrollRaf);
     scrollRaf = requestAnimationFrame(() => {
       const width = daysTrack.clientWidth;
@@ -503,18 +528,19 @@
       const newIndex = Math.round(daysTrack.scrollLeft / width);
       if (newIndex !== state.activeDay && newIndex >= 0 && newIndex < state.daysCount) {
         state.activeDay = newIndex;
-        saveState();
         updateActiveUI(newIndex, false);
-        clearTimeout(pillScrollTimer);
-        pillScrollTimer = setTimeout(() => {
-          const activePill = dayPills.querySelector(`.day-pill[data-day="${state.activeDay}"]`);
-          if (activePill) {
-            activePill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-          }
-        }, 120);
       }
     });
+    clearTimeout(swipeSettleTimer);
+    swipeSettleTimer = setTimeout(settleSwipeIndex, 120);
   }, { passive: true });
+
+  if ("onscrollend" in window) {
+    daysTrack.addEventListener("scrollend", () => {
+      clearTimeout(swipeSettleTimer);
+      settleSwipeIndex();
+    }, { passive: true });
+  }
 
   // Markdown Toolbar
   mdToolbar.addEventListener("click", (e) => {
@@ -806,12 +832,10 @@
   // so iOS never pushes the header off-screen or hides the bottom bar.
   const appShell = document.querySelector(".app-shell");
   let baseViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  let lastTrackWidth = daysTrack.clientWidth;
 
   function syncVisualViewport() {
-    if (!window.visualViewport) {
-      goToDay(state.activeDay, false);
-      return;
-    }
+    if (!window.visualViewport) return;
     const vv = window.visualViewport;
     if (vv.height > baseViewportHeight) {
       baseViewportHeight = vv.height;
@@ -828,7 +852,6 @@
       appShell.classList.remove("keyboard-open");
       baseViewportHeight = vv.height;
     }
-    goToDay(state.activeDay, false);
   }
 
   if (window.visualViewport) {
@@ -837,7 +860,13 @@
     syncVisualViewport();
   }
 
-  window.addEventListener("resize", () => goToDay(state.activeDay, false));
+  window.addEventListener("resize", () => {
+    const newWidth = daysTrack.clientWidth;
+    if (newWidth && newWidth !== lastTrackWidth) {
+      lastTrackWidth = newWidth;
+      goToDay(state.activeDay, false);
+    }
+  });
 
   renderAll();
 })();
